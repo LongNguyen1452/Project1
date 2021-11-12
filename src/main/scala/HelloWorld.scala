@@ -63,29 +63,34 @@ object HelloWorld {
 
         //1. Which countries have the highest infant mortality rate in the most recent year? (top 10)
         println("1. Which countries have the highest infant mortality rate in the most recent year? (top 10)")
-        spark.sql("select Country,round(mortality_rate,2) as Mortality_rate,Year from mortal where year=2019 and Gender='Total' order by mortality_rate desc").show(10,false)
-        //spark.sql("select Country,round(mortality_rate,2) as Mortality_rate,Year from mortal where year=2019 and Gender='Total' order by mortality_rate desc").write.format("org.apache.spark.sql.json").mode("overwrite").save("output\highestrecent")
+        spark.sql("select Country,round(mortality_rate,2) as Mortality_rate,Year from mortal where year=2019 and Gender='Total' order by mortality_rate desc limit 10").show(false)
+        spark.sql("select Country,round(mortality_rate,2) as Mortality_rate,Year from mortal where year=2019 and Gender='Total' order by mortality_rate desc limit 10").write.format("org.apache.spark.sql.json").mode("overwrite").save("output/problem1")
 
         //2. Which year had the highest infant mortality rate and for which country?
         println("2. Which year had the highest infant mortality rate and for which country?")
         spark.sql("select Country,mortality_rate,Year from mortal where gender = 'Total' and mortality_rate<100 order by mortality_rate desc limit 1").show(false)
+        spark.sql("select Country,mortality_rate,Year from mortal where gender = 'Total' and mortality_rate<100 order by mortality_rate desc limit 1").write.format("org.apache.spark.sql.json").mode("overwrite").save("output/problem2")
 
         //3. Which gender has a higher overall mortality rate?
         println("3. Which gender has a higher overall mortality rate?")
         spark.sql("select Gender,avg(mortality_rate) as average_mortality_rate from mortal where Gender != 'Total' group by Gender order by average_mortality_rate desc").show()
+        spark.sql("select Gender,avg(mortality_rate) as average_mortality_rate from mortal where Gender != 'Total' group by Gender order by average_mortality_rate desc").write.format("org.apache.spark.sql.json").mode("overwrite").save("output/problem3")
 
         //4. Which country had the top mortality rate each year?
         println("4. Which country had the top mortality rate each year?")
         spark.sql("select Country,Mortality_rate,Year from (select Country,Mortality_rate,Year,gender,rank() over (partition by year order by mortality_rate desc) as rank from mortal where gender='Total' and mortality_rate<100) temp where rank=1 order by year desc").show(false)
+        spark.sql("select Country,Mortality_rate,Year from (select Country,Mortality_rate,Year,gender,rank() over (partition by year order by mortality_rate desc) as rank from mortal where gender='Total' and mortality_rate<100) temp where rank=1 order by year desc").write.format("org.apache.spark.sql.json").mode("overwrite").save("output/problem4")
 
         //5. What's the global average mortality rate each year?
         println("5. What's the global average mortality rate each year?")
         spark.sql("select round(mortality_avg,2) as Mortality_rate,Year from (select avg(mortality_rate) as mortality_avg,year from mortal where gender='Total' group by year) order by year desc").show()
+        spark.sql("select round(mortality_avg,2) as Mortality_rate,Year from (select avg(mortality_rate) as mortality_avg,year from mortal where gender='Total' group by year) order by year desc").write.format("org.apache.spark.sql.json").mode("overwrite").save("output/problem5")
       }
       if (usertype == "admin"){
         //6. What's the predicted global mortality rate for 2022?
         println("6. What's the predicted global mortality rate for 2022? (admin view)")
         spark.sql("select '2022' as year, round(mortality_avg)*(0.59*(2022-2019)) as mortality_rate from (select avg(mortality_rate) as mortality_avg from mortal where year=2019) limit 1").show()
+        spark.sql("select '2022' as year, round(mortality_avg)*(0.59*(2022-2019)) as mortality_rate from (select avg(mortality_rate) as mortality_avg from mortal where year=2019) limit 1").write.format("org.apache.spark.sql.json").mode("overwrite").save("output/problem6")
       }
     }
   }
